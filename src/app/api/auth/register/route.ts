@@ -26,16 +26,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const userRole = await prisma.role.findUnique({
+    const userRole = await prisma.role.upsert({
       where: { name: "USER" },
+      update: {},
+      create: { name: "USER" },
     });
-
-    if (!userRole) {
-      return NextResponse.json(
-        { success: false, message: "Default role not found" },
-        { status: 500 }
-      );
-    }
 
     const hashed = await hashPassword(validated.password);
 
