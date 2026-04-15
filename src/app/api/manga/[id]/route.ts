@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { canAccessChapter, requireAdmin, requireAuth } from "@/lib/auth";
+import { canAccessChapter, requireAdmin, requireSession } from "@/lib/auth";
 import { normalizeCoverImageUrl } from "@/lib/cover-image";
 
 const updateMangaSchema = z.object({
@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth();
+    const session = await requireSession();
     const { id } = await params;
 
     const manga = await prisma.manga.findFirst({
@@ -44,8 +44,8 @@ export async function GET(
       );
     }
 
-    const role = user.role.name;
-    const plan = user.subscription?.plan || "FREE";
+    const role = session.role;
+    const plan = session.plan || "FREE";
 
     return NextResponse.json({
       success: true,

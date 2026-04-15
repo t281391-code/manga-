@@ -25,17 +25,25 @@ export default function MangaListPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   async function fetchMangas(currentPage: number) {
+    setLoading(true);
     setMessage("");
-    const res = await fetch(`/api/manga?page=${currentPage}&limit=6`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/manga?page=${currentPage}&limit=6`);
+      const data = await res.json();
 
-    if (data.success) {
-      setMangas(data.data);
-      setPagination(data.pagination);
-    } else {
-      setMessage(data.message || "Unable to load manga.");
+      if (data.success) {
+        setMangas(data.data);
+        setPagination(data.pagination);
+      } else {
+        setMessage(data.message || "Unable to load manga.");
+      }
+    } catch {
+      setMessage("Unable to load manga.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -64,7 +72,22 @@ export default function MangaListPage() {
 
         {message && <div className="panel p-5 text-red-700">{message}</div>}
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {loading && !mangas.length ? (
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="panel overflow-hidden">
+                <div className="h-52 animate-pulse bg-emerald-50" />
+                <div className="space-y-4 p-5">
+                  <div className="h-6 w-2/3 animate-pulse rounded bg-gray-100" />
+                  <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+                  <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+                  <div className="h-10 w-full animate-pulse rounded bg-emerald-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+        <div className={`grid gap-5 md:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-60" : ""}`}>
           {mangas.map((manga) => (
             <article key={manga.id} className="panel overflow-hidden">
               <CoverImage
@@ -82,13 +105,18 @@ export default function MangaListPage() {
                 <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
                   {manga.description}
                 </p>
-                <Link href={`/mangas/${manga.id}`} className="btn btn-primary mt-5 w-full">
+                <Link
+                  href={`/mangas/${manga.id}`}
+                  prefetch
+                  className="btn btn-primary mt-5 w-full"
+                >
                   Open manga
                 </Link>
               </div>
             </article>
           ))}
         </div>
+        )}
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <button

@@ -3,7 +3,23 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+type SessionPayload = {
+  userId: number;
+  email: string;
+  name?: string;
+  role: string;
+  plan: string;
+};
+
+function getJwtSecret() {
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET is not configured");
+  }
+
+  return new TextEncoder().encode(jwtSecret);
+}
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
@@ -16,6 +32,7 @@ export async function comparePassword(password: string, hashed: string) {
 export async function signToken(payload: {
   userId: number;
   email: string;
+  name?: string;
   role: string;
   plan: string;
 }) {
@@ -23,17 +40,12 @@ export async function signToken(payload: {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secret);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string) {
-  const { payload } = await jwtVerify(token, secret);
-  return payload as {
-    userId: number;
-    email: string;
-    role: string;
-    plan: string;
-  };
+  const { payload } = await jwtVerify(token, getJwtSecret());
+  return payload as SessionPayload;
 }
 
 export async function getTokenFromCookies() {
@@ -41,16 +53,33 @@ export async function getTokenFromCookies() {
   return cookieStore.get("token")?.value;
 }
 
-export async function getCurrentUser() {
+export async function getSession() {
   try {
     const token = await getTokenFromCookies();
     if (!token) return null;
 
-    const payload = await verifyToken(token);
+    return await verifyToken(token);
+  } catch {
+    return null;
+  }
+}
+
+export async function requireSession() {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
+export async function getCurrentUser() {
+  try {
+    const session = await getSession();
+    if (!session) return null;
 
     const user = await prisma.user.findFirst({
       where: {
-        id: payload.userId,
+        id: session.userId,
         deletedAt: null,
       },
       include: {

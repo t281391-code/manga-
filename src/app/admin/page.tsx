@@ -13,13 +13,21 @@ export default function AdminPage() {
         </p>
 
         <div className="mt-8 grid gap-5 md:grid-cols-2">
-          <Link href="/admin/mangas" className="panel block p-6 hover:border-emerald-500">
+          <Link
+            href="/admin/mangas"
+            prefetch
+            className="panel block p-6 hover:border-emerald-500"
+          >
             <h2 className="text-2xl font-black">Manage Mangas</h2>
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Create, edit, and soft delete manga records.
             </p>
           </Link>
-          <Link href="/admin/chapters" className="panel block p-6 hover:border-emerald-500">
+          <Link
+            href="/admin/chapters"
+            prefetch
+            className="panel block p-6 hover:border-emerald-500"
+          >
             <h2 className="text-2xl font-black">Manage Chapters</h2>
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Add preview and premium chapters for each manga.

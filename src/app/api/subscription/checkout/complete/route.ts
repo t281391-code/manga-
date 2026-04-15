@@ -52,6 +52,7 @@ export async function GET(req: Request) {
     const token = await signToken({
       userId: user.id,
       email: user.email,
+      name: user.name,
       role: user.role.name,
       plan: subscription.plan,
     });

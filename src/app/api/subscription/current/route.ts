@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const session = await requireSession();
 
     return NextResponse.json({
       success: true,
       data: {
-        plan: user.subscription?.plan || "FREE",
+        plan: session.plan || "FREE",
       },
     });
   } catch {

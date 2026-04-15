@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { canAccessChapter, requireAdmin, requireAuth } from "@/lib/auth";
+import { canAccessChapter, requireAdmin, requireSession } from "@/lib/auth";
 
 const updateChapterSchema = z.object({
   title: z.string().min(1),
@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth();
+    const session = await requireSession();
     const { id } = await params;
 
     const chapter = await prisma.chapter.findFirst({
@@ -23,8 +23,13 @@ export async function GET(
         id: Number(id),
         deletedAt: null,
       },
-      include: {
-        manga: true,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        orderIndex: true,
+        isPreview: true,
+        mangaId: true,
       },
     });
 
@@ -35,8 +40,8 @@ export async function GET(
       );
     }
 
-    const role = user.role.name;
-    const plan = user.subscription?.plan || "FREE";
+    const role = session.role;
+    const plan = session.plan || "FREE";
 
     if (
       role !== "ADMIN" &&

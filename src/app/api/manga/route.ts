@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getPagination } from "@/lib/utils";
-import { requireAdmin, requireAuth } from "@/lib/auth";
+import { requireAdmin, requireSession } from "@/lib/auth";
 import { normalizeCoverImageUrl } from "@/lib/cover-image";
 
 const createMangaSchema = z.object({
@@ -13,7 +13,7 @@ const createMangaSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    await requireAuth();
+    await requireSession();
 
     const { searchParams } = new URL(req.url);
     const { page, limit, skip } = getPagination(searchParams);

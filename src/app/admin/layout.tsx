@@ -1,18 +1,18 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getCurrentUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     redirect("/login");
   }
 
-  if (user.role.name !== "ADMIN") {
+  if (session.role !== "ADMIN") {
     redirect("/dashboard");
   }
 

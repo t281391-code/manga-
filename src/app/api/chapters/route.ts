@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getPagination } from "@/lib/utils";
-import { canAccessChapter, requireAdmin, requireAuth } from "@/lib/auth";
+import { canAccessChapter, requireAdmin, requireSession } from "@/lib/auth";
 
 const createChapterSchema = z.object({
   mangaId: z.number(),
@@ -14,13 +14,13 @@ const createChapterSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const user = await requireAuth();
+    const session = await requireSession();
 
     const { searchParams } = new URL(req.url);
     const mangaId = Number(searchParams.get("mangaId"));
     const { page, limit, skip } = getPagination(searchParams);
-    const role = user.role.name;
-    const plan = user.subscription?.plan || "FREE";
+    const role = session.role;
+    const plan = session.plan || "FREE";
 
     if (!mangaId) {
       return NextResponse.json(
