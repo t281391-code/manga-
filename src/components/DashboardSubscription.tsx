@@ -18,21 +18,6 @@ export default function DashboardSubscription({
     setMessage("");
 
     try {
-      if (nextPlan === "PREMIUM") {
-        const res = await fetch("/api/subscription/checkout", {
-          method: "POST",
-        });
-        const data = await res.json();
-
-        if (data.success && data.data?.url) {
-          window.location.href = data.data.url;
-          return;
-        }
-
-        setMessage(data.message || "Unable to start Stripe Checkout");
-        return;
-      }
-
       const res = await fetch("/api/subscription/upgrade", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -65,13 +50,14 @@ export default function DashboardSubscription({
         >
           Set FREE
         </button>
-        <button
-          className="btn btn-primary"
-          disabled={loading || plan === "PREMIUM"}
-          onClick={() => updatePlan("PREMIUM")}
-        >
-          Pay with Stripe
-        </button>
+        <form method="post" action="/api/subscription/checkout">
+          <button
+            className="btn btn-primary"
+            disabled={loading || plan === "PREMIUM"}
+          >
+            Pay with Stripe
+          </button>
+        </form>
       </div>
       {message && (
         <p className="mt-4 text-sm font-semibold text-emerald-800">{message}</p>

@@ -12,11 +12,20 @@ function getOrigin(req: Request) {
   return host ? `${proto}://${host}` : "http://localhost:3001";
 }
 
+function wantsJson(req: Request) {
+  return req.headers.get("accept")?.includes("application/json") || false;
+}
+
 export async function POST(req: Request) {
   try {
     const user = await requireAuth();
+    const origin = getOrigin(req);
 
     if (user.subscription?.plan === "PREMIUM") {
+      if (!wantsJson(req)) {
+        return NextResponse.redirect(`${origin}/dashboard`, 303);
+      }
+
       return NextResponse.json({
         success: true,
         message: "Already on PREMIUM",
@@ -24,7 +33,6 @@ export async function POST(req: Request) {
       });
     }
 
-    const origin = getOrigin(req);
     const priceId = process.env.STRIPE_PREMIUM_PRICE_ID;
     const currency = process.env.STRIPE_CURRENCY || "usd";
     const amount = Number(process.env.STRIPE_PREMIUM_AMOUNT || "999");
@@ -67,6 +75,14 @@ export async function POST(req: Request) {
       cancel_url: `${origin}/dashboard?checkout=cancelled`,
     });
 
+    if (!session.url) {
+      throw new Error("Stripe checkout session URL was not created");
+    }
+
+    if (!wantsJson(req)) {
+      return NextResponse.redirect(session.url, 303);
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -74,6 +90,13 @@ export async function POST(req: Request) {
       },
     });
   } catch {
+    if (!wantsJson(req)) {
+      return NextResponse.redirect(
+        `${getOrigin(req)}/dashboard?checkout=stripe-error`,
+        303
+      );
+    }
+
     return NextResponse.json(
       { success: false, message: "Could not create Stripe checkout session" },
       { status: 500 }
