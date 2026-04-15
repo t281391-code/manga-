@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getPagination } from "@/lib/utils";
 import { canAccessChapter, requireAdmin, requireSession } from "@/lib/auth";
+import { getCachedChapterPage, refreshMangaContent } from "@/lib/manga-data";
 
 const createChapterSchema = z.object({
   mangaId: z.number(),
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const mangaId = Number(searchParams.get("mangaId"));
-    const { page, limit, skip } = getPagination(searchParams);
+    const { page, limit } = getPagination(searchParams);
     const role = session.role;
     const plan = session.plan || "FREE";
 
@@ -29,29 +30,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const where = {
-      mangaId,
-      deletedAt: null,
-    };
-
-    const [chapters, total] = await Promise.all([
-      prisma.chapter.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { orderIndex: "asc" },
-        select: {
-          id: true,
-          title: true,
-          orderIndex: true,
-          isPreview: true,
-          mangaId: true,
-        },
-      }),
-      prisma.chapter.count({
-        where,
-      }),
-    ]);
+    const { chapters, pagination } = await getCachedChapterPage(mangaId, page, limit);
 
     return NextResponse.json({
       success: true,
@@ -61,12 +40,7 @@ export async function GET(req: Request) {
           role === "ADMIN" ||
           canAccessChapter(plan, chapter.isPreview, chapter.orderIndex),
       })),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination,
     });
   } catch {
     return NextResponse.json(
@@ -86,6 +60,8 @@ export async function POST(req: Request) {
     const chapter = await prisma.chapter.create({
       data: validated,
     });
+
+    refreshMangaContent();
 
     return NextResponse.json(
       {

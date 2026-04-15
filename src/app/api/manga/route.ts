@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getPagination } from "@/lib/utils";
 import { requireAdmin, requireSession } from "@/lib/auth";
 import { normalizeCoverImageUrl } from "@/lib/cover-image";
+import { getCachedMangaPage, refreshMangaContent } from "@/lib/manga-data";
 
 const createMangaSchema = z.object({
   title: z.string().min(1),
@@ -16,34 +17,14 @@ export async function GET(req: Request) {
     await requireSession();
 
     const { searchParams } = new URL(req.url);
-    const { page, limit, skip } = getPagination(searchParams);
+    const { page, limit } = getPagination(searchParams);
 
-    const [mangas, total] = await Promise.all([
-      prisma.manga.findMany({
-        where: { deletedAt: null },
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          _count: {
-            select: { chapters: true },
-          },
-        },
-      }),
-      prisma.manga.count({
-        where: { deletedAt: null },
-      }),
-    ]);
+    const { mangas, pagination } = await getCachedMangaPage(page, limit);
 
     return NextResponse.json({
       success: true,
       data: mangas,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination,
     });
   } catch {
     return NextResponse.json(
@@ -68,6 +49,8 @@ export async function POST(req: Request) {
         coverImage,
       },
     });
+
+    refreshMangaContent();
 
     return NextResponse.json(
       {

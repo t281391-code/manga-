@@ -1,55 +1,28 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import CoverImage from "@/components/CoverImage";
+import { getSession } from "@/lib/auth";
+import { getCachedMangaPage } from "@/lib/manga-data";
 
-type Manga = {
-  id: number;
-  title: string;
-  description: string;
-  coverImage?: string | null;
-  _count?: { chapters: number };
-};
+function pageHref(page: number) {
+  return `/mangas?page=${page}`;
+}
 
-type Pagination = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};
+export default async function MangaListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const session = await getSession();
 
-export default function MangaListPage() {
-  const [mangas, setMangas] = useState<Manga[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [page, setPage] = useState(1);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  async function fetchMangas(currentPage: number) {
-    setLoading(true);
-    setMessage("");
-    try {
-      const res = await fetch(`/api/manga?page=${currentPage}&limit=6`);
-      const data = await res.json();
-
-      if (data.success) {
-        setMangas(data.data);
-        setPagination(data.pagination);
-      } else {
-        setMessage(data.message || "Unable to load manga.");
-      }
-    } catch {
-      setMessage("Unable to load manga.");
-    } finally {
-      setLoading(false);
-    }
+  if (!session) {
+    redirect("/login");
   }
 
-  useEffect(() => {
-    fetchMangas(page);
-  }, [page]);
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page || 1));
+  const { mangas, pagination } = await getCachedMangaPage(page, 6);
 
   return (
     <main>
@@ -63,31 +36,12 @@ export default function MangaListPage() {
               Open a manga and choose a chapter. Locked chapters require PREMIUM.
             </p>
           </div>
-          {pagination && (
-            <p className="text-sm font-semibold text-gray-600">
-              {pagination.total} manga found
-            </p>
-          )}
+          <p className="text-sm font-semibold text-gray-600">
+            {pagination.total} manga found
+          </p>
         </div>
 
-        {message && <div className="panel p-5 text-red-700">{message}</div>}
-
-        {loading && !mangas.length ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="panel overflow-hidden">
-                <div className="h-52 animate-pulse bg-emerald-50" />
-                <div className="space-y-4 p-5">
-                  <div className="h-6 w-2/3 animate-pulse rounded bg-gray-100" />
-                  <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-                  <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
-                  <div className="h-10 w-full animate-pulse rounded bg-emerald-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-        <div className={`grid gap-5 md:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-60" : ""}`}>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {mangas.map((manga) => (
             <article key={manga.id} className="panel overflow-hidden">
               <CoverImage
@@ -116,28 +70,33 @@ export default function MangaListPage() {
             </article>
           ))}
         </div>
-        )}
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="btn btn-secondary"
-          >
-            Prev
-          </button>
+          {pagination.page <= 1 ? (
+            <span className="btn btn-secondary opacity-55">Prev</span>
+          ) : (
+            <Link
+              href={pageHref(pagination.page - 1)}
+              prefetch
+              className="btn btn-secondary"
+            >
+              Prev
+            </Link>
+          )}
           <span className="rounded border border-emerald-100 bg-white px-4 py-2 text-sm font-bold">
-            Page {page} of {pagination?.totalPages || 1}
+            Page {pagination.page} of {pagination.totalPages}
           </span>
-          <button
-            onClick={() =>
-              setPage((p) => Math.min(pagination?.totalPages || p + 1, p + 1))
-            }
-            disabled={pagination ? page >= pagination.totalPages : false}
-            className="btn btn-secondary"
-          >
-            Next
-          </button>
+          {pagination.page >= pagination.totalPages ? (
+            <span className="btn btn-secondary opacity-55">Next</span>
+          ) : (
+            <Link
+              href={pageHref(pagination.page + 1)}
+              prefetch
+              className="btn btn-secondary"
+            >
+              Next
+            </Link>
+          )}
         </div>
       </section>
     </main>

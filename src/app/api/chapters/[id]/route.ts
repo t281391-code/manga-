@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { canAccessChapter, requireAdmin, requireSession } from "@/lib/auth";
+import { getCachedChapterDetail, refreshMangaContent } from "@/lib/manga-data";
 
 const updateChapterSchema = z.object({
   title: z.string().min(1),
@@ -18,20 +19,7 @@ export async function GET(
     const session = await requireSession();
     const { id } = await params;
 
-    const chapter = await prisma.chapter.findFirst({
-      where: {
-        id: Number(id),
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        orderIndex: true,
-        isPreview: true,
-        mangaId: true,
-      },
-    });
+    const chapter = await getCachedChapterDetail(Number(id));
 
     if (!chapter) {
       return NextResponse.json(
@@ -83,6 +71,8 @@ export async function PUT(
       data: validated,
     });
 
+    refreshMangaContent();
+
     return NextResponse.json({
       success: true,
       message: "Chapter updated",
@@ -115,6 +105,8 @@ export async function DELETE(
       where: { id: Number(id) },
       data: { deletedAt: new Date() },
     });
+
+    refreshMangaContent();
 
     return NextResponse.json({
       success: true,
