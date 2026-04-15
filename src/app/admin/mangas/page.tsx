@@ -112,7 +112,7 @@ export default function AdminMangasPage() {
 
   return (
     <main>
-      <Navbar />
+      <Navbar showAdmin />
       <section className="page-shell">
         <div className="mb-8">
           <span className="badge bg-emerald-100 text-emerald-800">Admin</span>

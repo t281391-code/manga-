@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 export default function AdminPage() {
   return (
     <main>
-      <Navbar />
+      <Navbar showAdmin />
       <section className="page-shell">
         <span className="badge bg-emerald-100 text-emerald-800">Admin only</span>
         <h1 className="mt-4 text-4xl font-black">Admin Panel</h1>

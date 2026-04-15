@@ -27,7 +27,7 @@ export default async function MangaDetailPage({
 
   return (
     <main>
-      <Navbar />
+      <Navbar showAdmin={session.role === "ADMIN"} />
       <section className="page-shell">
         <MangaReader
           manga={{

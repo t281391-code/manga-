@@ -26,7 +26,7 @@ export default async function DashboardPage({
 
   return (
     <main>
-      <Navbar />
+      <Navbar showAdmin={session.role === "ADMIN"} />
       <section className="page-shell">
         <div className="mb-8">
           <span className="badge bg-emerald-100 text-emerald-800">Account</span>

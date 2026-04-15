@@ -26,7 +26,7 @@ export default async function MangaListPage({
 
   return (
     <main>
-      <Navbar />
+      <Navbar showAdmin={session.role === "ADMIN"} />
       <section className="page-shell">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>

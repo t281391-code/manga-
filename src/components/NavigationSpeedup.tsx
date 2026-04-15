@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const prefetchRoutes = ["/dashboard", "/mangas", "/admin"];
+const prefetchRoutes = ["/dashboard", "/mangas"];
 
 export default function NavigationSpeedup() {
   const router = useRouter();
