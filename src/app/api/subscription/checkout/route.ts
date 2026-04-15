@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 function getOrigin(req: Request) {
   const origin = req.headers.get("origin");
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const currency = process.env.STRIPE_CURRENCY || "usd";
     const amount = Number(process.env.STRIPE_PREMIUM_AMOUNT || "999");
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       customer_email: user.email,
       client_reference_id: String(user.id),

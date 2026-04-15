@@ -1,9 +1,15 @@
 import Stripe from "stripe";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+let stripe: Stripe | null = null;
 
-if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY is not configured");
+export function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    throw new Error("STRIPE_SECRET_KEY is not configured");
+  }
+
+  stripe ??= new Stripe(stripeSecretKey);
+
+  return stripe;
 }
-
-export const stripe = new Stripe(stripeSecretKey);
