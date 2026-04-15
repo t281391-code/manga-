@@ -1,60 +1,26 @@
-"use client";
-
-import { useState } from "react";
-
 export default function DashboardSubscription({
-  initialPlan,
-  initialMessage,
+  plan,
+  message,
 }: {
-  initialPlan: "FREE" | "PREMIUM";
-  initialMessage?: string;
+  plan: "FREE" | "PREMIUM";
+  message?: string;
 }) {
-  const [plan, setPlan] = useState(initialPlan);
-  const [message, setMessage] = useState(initialMessage || "");
-  const [loading, setLoading] = useState(false);
-
-  async function updatePlan(nextPlan: "FREE" | "PREMIUM") {
-    setLoading(true);
-    setMessage("");
-
-    try {
-      const res = await fetch("/api/subscription/upgrade", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: nextPlan }),
-      });
-      const data = await res.json();
-      setMessage(data.message || "Subscription updated");
-
-      if (data.success) {
-        setPlan(nextPlan);
-      }
-    } catch {
-      setMessage("Subscription update failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <section className="panel p-6">
       <h2 className="text-2xl font-black">Subscription</h2>
       <p className="mt-3 text-sm leading-6 text-gray-600">
-        FREE can read preview chapters. PREMIUM can read every chapter.
+        Preview chapters are available on FREE. Full chapter access is available
+        on PREMIUM.
       </p>
       <div className="mt-5 flex flex-wrap gap-3">
-        <button
-          className="btn btn-secondary"
-          disabled={loading || plan === "FREE"}
-          onClick={() => updatePlan("FREE")}
-        >
-          Set FREE
-        </button>
+        <form method="post" action="/api/subscription/upgrade">
+          <input type="hidden" name="plan" value="FREE" />
+          <button className="btn btn-secondary" disabled={plan === "FREE"}>
+            Set FREE
+          </button>
+        </form>
         <form method="post" action="/api/subscription/checkout">
-          <button
-            className="btn btn-primary"
-            disabled={loading || plan === "PREMIUM"}
-          >
+          <button className="btn btn-primary" disabled={plan === "PREMIUM"}>
             Pay with Stripe
           </button>
         </form>

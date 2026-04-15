@@ -63,8 +63,8 @@ export default async function DashboardPage({
           </section>
 
           <DashboardSubscription
-            initialPlan={plan}
-            initialMessage={getCheckoutMessage(params.checkout)}
+            plan={plan}
+            message={getCheckoutMessage(params.checkout)}
           />
         </div>
       </section>
