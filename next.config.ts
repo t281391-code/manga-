@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   turbopack: {
     root: projectRoot,
   },
@@ -22,8 +24,20 @@ const nextConfig: NextConfig = {
             value: "nosniff",
           },
           {
+            key: "X-DNS-Prefetch-Control",
+            value: "off",
+          },
+          {
             key: "X-Frame-Options",
             value: "DENY",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
+          {
+            key: "Cross-Origin-Resource-Policy",
+            value: "same-origin",
           },
           {
             key: "Referrer-Policy",

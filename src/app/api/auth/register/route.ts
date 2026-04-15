@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken } from "@/lib/auth";
 import { authCookieOptions } from "@/lib/cookies";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -12,6 +13,19 @@ const registerSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for") ||
+      req.headers.get("x-real-ip") ||
+      "unknown";
+    const rate = checkRateLimit(`register:${ip}`, 3, 60 * 1000);
+
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, message: "Too many register attempts" },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const validated = registerSchema.parse(body);
 
