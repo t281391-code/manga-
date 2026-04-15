@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+enum RoleName {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      RoleName @unique(map: "Role_name_key")
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("role")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  email         String        @unique(map: "User_email_key")
+  password      String
+  name          String
+  roleId        Int
+  role          Role          @relation(fields: [roleId], references: [id], map: "User_roleId_fkey")
+  subscription  Subscription?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  @@index([roleId], map: "User_roleId_fkey")
+  @@map("user")
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+  plan      Plan     @default(FREE)
+  userId    Int      @unique(map: "Subscription_userId_key")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Subscription_userId_fkey")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscription")
+}
+
+model Manga {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  coverImage  String?
+  chapters    Chapter[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@map("manga")
+}
+
+model Chapter {
+  id           Int      @id @default(autoincrement())
+  title        String
+  content      String   @db.LongText
+  orderIndex   Int
+  isPreview    Boolean  @default(false)
+  mangaId      Int
+  manga        Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade, map: "Chapter_mangaId_fkey")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([mangaId, orderIndex], map: "Chapter_mangaId_orderIndex_key")
+  @@map("chapter")
+}
